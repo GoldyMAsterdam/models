@@ -1,24 +1,28 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
-if (window.innerWidth < 1016) {
-    alert('This website is not made for smaller devices')
-}
-
 const SplineScene = ({ sceneUrl }) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const appRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+
+  // Check screen size
+  const checkScreenSize = useCallback(() => {
+    const isSmall = window.innerWidth < 1016;
+    setIsSmallScreen(isSmall);
+    return isSmall;
+  }, []);
 
   const updateDimensions = useCallback(() => {
-    if (containerRef.current) {
+    if (containerRef.current && !isSmallScreen) {
       const { offsetWidth, offsetHeight } = containerRef.current;
       setDimensions({ width: offsetWidth, height: offsetHeight });
     }
-  }, []);
+  }, [isSmallScreen]);
 
   const resizeCanvas = useCallback(() => {
-    if (canvasRef.current && appRef.current) {
+    if (canvasRef.current && appRef.current && !isSmallScreen) {
       const canvas = canvasRef.current;
       const container = containerRef.current;
       
@@ -42,15 +46,27 @@ const SplineScene = ({ sceneUrl }) => {
         }
       }
     }
-  }, []);
+  }, [isSmallScreen]);
 
   useEffect(() => {
+    // Initial screen size check
+    checkScreenSize();
     updateDimensions();
     
     const handleResize = () => {
-      updateDimensions();
-      // Debounce resize to avoid too many calls
-      setTimeout(resizeCanvas, 100);
+      const wasSmallScreen = isSmallScreen;
+      const isNowSmallScreen = checkScreenSize();
+      
+      // If screen size category changed, update dimensions
+      if (wasSmallScreen !== isNowSmallScreen) {
+        updateDimensions();
+      }
+      
+      if (!isNowSmallScreen) {
+        updateDimensions();
+        // Debounce resize to avoid too many calls
+        setTimeout(resizeCanvas, 100);
+      }
     };
 
     window.addEventListener('resize', handleResize);
@@ -64,12 +80,14 @@ const SplineScene = ({ sceneUrl }) => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleResize);
     };
-  }, [updateDimensions, resizeCanvas]);
+  }, [updateDimensions, resizeCanvas, checkScreenSize, isSmallScreen]);
 
   useEffect(() => {
     let mounted = true;
     
     const loadSpline = async () => {
+      if (isSmallScreen) return; // Don't load Spline on small screens
+      
       try {
         const { Application } = await import('@splinetool/runtime');
         
@@ -89,7 +107,7 @@ const SplineScene = ({ sceneUrl }) => {
       }
     };
 
-    if (canvasRef.current && dimensions.width > 0 && dimensions.height > 0) {
+    if (canvasRef.current && dimensions.width > 0 && dimensions.height > 0 && !isSmallScreen) {
       loadSpline();
     }
 
@@ -100,21 +118,71 @@ const SplineScene = ({ sceneUrl }) => {
         appRef.current = null;
       }
     };
-  }, [sceneUrl, dimensions, resizeCanvas]);
+  }, [sceneUrl, dimensions, resizeCanvas, isSmallScreen]);
 
+  // Render small screen message
+  if (isSmallScreen) {
+    return (
+      <div 
+        style={{ 
+          width: '100%', 
+          height: '100vh',
+          backgroundColor: '#000000',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#ffffff',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+          textAlign: 'center',
+          padding: '2rem',
+          boxSizing: 'border-box'
+        }}
+      >
+          
+          <h1 style={{ 
+            fontSize: '1.5rem', 
+            fontWeight: '600', 
+            marginBottom: '1rem',
+            lineHeight: '1.3'
+          }}>
+            Desktop Required
+          </h1>
+          
+          <p style={{ 
+            fontSize: '1rem', 
+            opacity: 0.8, 
+            marginBottom: '1.5rem',
+            lineHeight: '1.5'
+          }}>
+            This website is incompatible with smaller devices, use a desktop or ipad instead. 
+          </p>
+          
+          <p style={{ 
+            fontSize: '0.875rem', 
+            opacity: 0.6,
+            marginBottom: '2rem' 
+          }}>
+            Current screen width: {window.innerWidth}px
+          </p>
+          </div>
+    );
+  }
+
+  // Render normal Spline scene for larger screens
   return (
     <div 
       ref={containerRef}
       style={{ 
         width: '100%', 
-        height: '100dvh',
+        height: '100vh',
         minHeight: '400px',
-        maxHeight: '100vh',
         position: 'relative',
         overflow: 'hidden',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        backgroundColor: '#000000'
       }}
     >
       <canvas 
