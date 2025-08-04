@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
+
+
 const SplineScene = ({ sceneUrl }) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -7,7 +9,6 @@ const SplineScene = ({ sceneUrl }) => {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [isSmallScreen, setIsSmallScreen] = useState(false);
 
-  // Check screen size
   const checkScreenSize = useCallback(() => {
     const isSmall = window.innerWidth < 1016;
     setIsSmallScreen(isSmall);
@@ -29,18 +30,15 @@ const SplineScene = ({ sceneUrl }) => {
       if (container) {
         const { offsetWidth, offsetHeight } = container;
         
-        // Set canvas size
         canvas.width = offsetWidth;
         canvas.height = offsetHeight;
         canvas.style.width = `${offsetWidth}px`;
         canvas.style.height = `${offsetHeight}px`;
         
-        // Trigger Spline resize if the method exists
         if (appRef.current.resize) {
           appRef.current.resize();
         }
         
-        // Alternative: manually trigger a resize event
         if (appRef.current.setSize) {
           appRef.current.setSize(offsetWidth, offsetHeight);
         }
@@ -49,7 +47,6 @@ const SplineScene = ({ sceneUrl }) => {
   }, [isSmallScreen]);
 
   useEffect(() => {
-    // Initial screen size check
     checkScreenSize();
     updateDimensions();
     
@@ -57,23 +54,20 @@ const SplineScene = ({ sceneUrl }) => {
       const wasSmallScreen = isSmallScreen;
       const isNowSmallScreen = checkScreenSize();
       
-      // If screen size category changed, update dimensions
       if (wasSmallScreen !== isNowSmallScreen) {
         updateDimensions();
       }
       
       if (!isNowSmallScreen) {
         updateDimensions();
-        // Debounce resize to avoid too many calls
         setTimeout(resizeCanvas, 100);
       }
     };
 
     window.addEventListener('resize', handleResize);
     
-    // Also listen for orientation changes on mobile
     window.addEventListener('orientationchange', () => {
-      setTimeout(handleResize, 500); // Longer delay for orientation change
+      setTimeout(handleResize, 500); 
     });
 
     return () => {
@@ -86,7 +80,7 @@ const SplineScene = ({ sceneUrl }) => {
     let mounted = true;
     
     const loadSpline = async () => {
-      if (isSmallScreen) return; // Don't load Spline on small screens
+      if (isSmallScreen) return;
       
       try {
         const { Application } = await import('@splinetool/runtime');
@@ -99,7 +93,6 @@ const SplineScene = ({ sceneUrl }) => {
         await app.load(sceneUrl);
         
         if (mounted) {
-          // Initial resize after loading
           setTimeout(resizeCanvas, 100);
         }
       } catch (error) {
@@ -120,7 +113,6 @@ const SplineScene = ({ sceneUrl }) => {
     };
   }, [sceneUrl, dimensions, resizeCanvas, isSmallScreen]);
 
-  // Render small screen message
   if (isSmallScreen) {
     return (
       <div 
@@ -150,7 +142,7 @@ const SplineScene = ({ sceneUrl }) => {
           </h1>
           
           <p style={{ 
-            fontSize: '1rem', 
+            fontSize: '1rem',
             opacity: 0.8, 
             marginBottom: '1.5rem',
             lineHeight: '1.5'
@@ -169,7 +161,6 @@ const SplineScene = ({ sceneUrl }) => {
     );
   }
 
-  // Render normal Spline scene for larger screens
   return (
     <div 
       ref={containerRef}
