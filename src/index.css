@@ -1,1 +1,12 @@
-@import "tailwindcss"
+@import "tailwindcss";
+
+body {
+  background-color: black;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  background-color: black;
+  min-height: 100vh;
+}

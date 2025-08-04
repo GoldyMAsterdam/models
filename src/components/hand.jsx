@@ -1,6 +1,6 @@
 import SplineScene from './SplineScene';
 
-export default function Home() {
+export default function Hand() {
   return (
     <main>
       <SplineScene 
